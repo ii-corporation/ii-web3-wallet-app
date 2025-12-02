@@ -1,98 +1,326 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Zoop Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS backend API with Fastify adapter for the Zoop mobile wallet.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+- **Framework**: [NestJS](https://nestjs.com) v11
+- **HTTP**: [Fastify](https://fastify.io) adapter (faster than Express)
+- **Database**: PostgreSQL with [Prisma](https://prisma.io) ORM
+- **Queue**: [BullMQ](https://bullmq.io) with Redis
+- **Validation**: class-validator + class-transformer
+- **Auth**: Privy JWT verification
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Getting Started
 
-## Project setup
+### Prerequisites
+
+- Bun v1.2+
+- Docker (for PostgreSQL + Redis)
+- Privy account with App ID and Secret
+
+### Setup
 
 ```bash
-$ bun install
+# From monorepo root
+bun install
+
+# Start local databases
+docker compose up -d
+
+# Copy environment file
+cp .env.example .env
+# Edit .env with your credentials
+
+# Run database migrations
+bun run prisma:migrate
+
+# Start development server
+bun run start:dev
 ```
 
-## Compile and run the project
+Server runs at `http://localhost:3001`
+
+## Project Structure
+
+```
+apps/backend/
+├── src/
+│   ├── main.ts                 # Application entry point
+│   ├── app.module.ts           # Root module
+│   ├── app.controller.ts       # Health check endpoints
+│   │
+│   ├── modules/                # Feature modules
+│   │   ├── auth/               # Authentication (Privy)
+│   │   │   ├── auth.module.ts
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.service.ts
+│   │   │   ├── auth.guard.ts   # JWT guard
+│   │   │   └── dto/
+│   │   │
+│   │   ├── users/              # User management
+│   │   │   ├── users.module.ts
+│   │   │   ├── users.controller.ts
+│   │   │   ├── users.service.ts
+│   │   │   └── dto/
+│   │   │
+│   │   ├── wallets/            # Wallet operations
+│   │   │   ├── wallets.module.ts
+│   │   │   ├── wallets.controller.ts
+│   │   │   ├── wallets.service.ts
+│   │   │   └── dto/
+│   │   │
+│   │   ├── balances/           # Balance tracking
+│   │   │   ├── balances.module.ts
+│   │   │   ├── balances.controller.ts
+│   │   │   ├── balances.service.ts
+│   │   │   └── dto/
+│   │   │
+│   │   ├── staking/            # Staking pools
+│   │   │   ├── staking.module.ts
+│   │   │   ├── staking.controller.ts
+│   │   │   ├── staking.service.ts
+│   │   │   └── dto/
+│   │   │
+│   │   ├── bridge/             # Cross-chain bridge
+│   │   │   ├── bridge.module.ts
+│   │   │   ├── bridge.controller.ts
+│   │   │   ├── bridge.service.ts
+│   │   │   └── dto/
+│   │   │
+│   │   └── transactions/       # Transaction queue
+│   │       ├── transactions.module.ts
+│   │       ├── transactions.service.ts
+│   │       ├── transactions.processor.ts  # BullMQ worker
+│   │       └── dto/
+│   │
+│   ├── common/                 # Shared utilities
+│   │   ├── decorators/         # Custom decorators
+│   │   ├── filters/            # Exception filters
+│   │   ├── guards/             # Auth guards
+│   │   ├── interceptors/       # Response interceptors
+│   │   └── pipes/              # Validation pipes
+│   │
+│   └── prisma/                 # Database
+│       ├── prisma.module.ts
+│       ├── prisma.service.ts
+│       └── schema.prisma       # Database schema
+│
+├── test/                       # E2E tests
+├── .env.example                # Environment template
+├── nest-cli.json               # NestJS CLI config
+└── tsconfig.json               # TypeScript config
+```
+
+## API Endpoints
+
+### Authentication
+```
+POST   /api/auth/verify          # Verify Privy token
+POST   /api/auth/refresh         # Refresh session
+```
+
+### Users
+```
+GET    /api/users/me             # Get current user
+PATCH  /api/users/me             # Update profile
+```
+
+### Wallets
+```
+GET    /api/wallets              # List user wallets
+POST   /api/wallets              # Create wallet
+GET    /api/wallets/:address     # Get wallet details
+```
+
+### Balances
+```
+GET    /api/balances             # Get all balances
+GET    /api/balances/:token      # Get specific token balance
+```
+
+### Staking
+```
+GET    /api/staking/pools        # List staking pools
+GET    /api/staking/stakes       # Get user stakes
+POST   /api/staking/stake        # Create new stake
+POST   /api/staking/unstake      # Unstake tokens
+POST   /api/staking/claim        # Claim rewards
+```
+
+### Bridge
+```
+GET    /api/bridge/quote         # Get bridge quote
+POST   /api/bridge/transfer      # Initiate bridge transfer
+GET    /api/bridge/status/:id    # Check transfer status
+```
+
+### Transactions
+```
+GET    /api/transactions         # List transactions
+GET    /api/transactions/:id     # Get transaction details
+```
+
+## Environment Variables
 
 ```bash
-# development
-$ bun run start
+# Server
+PORT=3001
+NODE_ENV=development
 
-# watch mode
-$ bun run start:dev
+# Database
+DATABASE_URL=postgresql://zoop:zoop_dev_password@localhost:5432/zoop
 
-# production mode
-$ bun run start:prod
+# Redis (for BullMQ)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# CORS
+CORS_ORIGINS=http://localhost:8081,http://localhost:19006
+
+# Privy
+PRIVY_APP_ID=your_app_id
+PRIVY_APP_SECRET=your_app_secret
+
+# Hedera
+HEDERA_NETWORK=testnet
+HEDERA_OPERATOR_ID=0.0.xxxxx
+HEDERA_OPERATOR_KEY=your_private_key
+HEDERA_JSON_RPC_URL=https://testnet.hashio.io/api
+
+# BSC
+BSC_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545
 ```
 
-## Run tests
+## Database
+
+### Prisma Commands
 
 ```bash
-# unit tests
-$ bun run test
+# Generate Prisma client
+bun run prisma:generate
 
-# e2e tests
-$ bun run test:e2e
+# Create migration
+bun run prisma:migrate
 
-# test coverage
-$ bun run test:cov
+# Reset database
+bun run prisma:reset
+
+# Open Prisma Studio
+bun run prisma:studio
 ```
 
-## Deployment
+### Schema Overview
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```prisma
+model User {
+  id            String    @id @default(cuid())
+  privyId       String    @unique
+  email         String?
+  wallets       Wallet[]
+  stakes        Stake[]
+  createdAt     DateTime  @default(now())
+}
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+model Wallet {
+  id            String    @id @default(cuid())
+  address       String    @unique
+  chain         Chain
+  userId        String
+  user          User      @relation(...)
+}
+
+model Balance {
+  id            String    @id @default(cuid())
+  walletId      String
+  token         String
+  amount        Decimal
+  pendingIn     Decimal   @default(0)
+  pendingOut    Decimal   @default(0)
+}
+
+model Transaction {
+  id            String    @id @default(cuid())
+  type          TxType
+  status        TxStatus
+  walletId      String
+  amount        Decimal
+  txHash        String?
+  queuePosition Int?
+}
+```
+
+## Transaction Queue (BullMQ)
+
+Hedera has limited throughput (~65 accounts/sec). We use BullMQ to queue transactions:
+
+```typescript
+// Adding a transaction to queue
+await this.transactionQueue.add('hedera-tx', {
+  type: 'TRANSFER',
+  from: '0x...',
+  to: '0x...',
+  amount: '1000000',
+}, {
+  priority: 1,        // Higher = processed first
+  attempts: 3,        // Retry on failure
+  backoff: {
+    type: 'exponential',
+    delay: 1000,
+  },
+});
+```
+
+Monitor queue at Redis Commander: http://localhost:8081
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `bun run start` | Start server |
+| `bun run start:dev` | Start with hot reload |
+| `bun run start:prod` | Start production build |
+| `bun run build` | Build for production |
+| `bun run test` | Run unit tests |
+| `bun run test:e2e` | Run E2E tests |
+| `bun run prisma:generate` | Generate Prisma client |
+| `bun run prisma:migrate` | Run migrations |
+| `bun run prisma:studio` | Open Prisma Studio |
+
+## Testing
 
 ```bash
-$ bun install -g @nestjs/mau
-$ mau deploy
+# Unit tests
+bun run test
+
+# E2E tests (requires running database)
+bun run test:e2e
+
+# Test coverage
+bun run test:cov
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Architecture Notes
 
-## Resources
+### Why Fastify?
 
-Check out a few resources that may come in handy when working with NestJS:
+Fastify is ~2x faster than Express for JSON serialization, important for high-throughput APIs.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Why BullMQ?
 
-## Support
+Hedera's consensus limits require queuing transactions. BullMQ provides:
+- Priority queues
+- Retry with backoff
+- Rate limiting
+- Job scheduling
+- Dashboard (Bull Board)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Off-chain Ledger
 
-## Stay in touch
+To handle Hedera's account creation delays:
+1. User signs up -> Balance shows 0 ZOOP
+2. Deposit detected -> `pendingIn` incremented immediately
+3. Account created on Hedera -> Balance synced
+4. `availableBalance = onChain + pendingIn - pendingOut`
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+See [ARCHITECTURE.md](../../ARCHITECTURE.md) for full details.
