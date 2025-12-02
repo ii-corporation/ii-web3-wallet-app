@@ -1,0 +1,31 @@
+{
+  "name": "zoop-app",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "clean": "turbo clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "mobile": "bun run --cwd apps/mobile start",
+    "mobile:ios": "bun run --cwd apps/mobile ios",
+    "mobile:android": "bun run --cwd apps/mobile android",
+    "backend": "bun run --cwd apps/backend start:dev",
+    "db:migrate": "bun run --cwd apps/backend db:migrate",
+    "db:generate": "bun run --cwd apps/backend db:generate"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.7.3",
+    "turbo": "^2.6.1",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
