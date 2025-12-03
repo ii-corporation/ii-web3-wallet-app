@@ -3,14 +3,35 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: false }),
+    new FastifyAdapter({ logger: true }),
+    { logger: ['log', 'error', 'warn', 'debug', 'verbose'] },
   );
+
+  const logger = new Logger('HTTP');
+
+  // Log all incoming requests
+  app.use((req: any, res: any, next: () => void) => {
+    const { method, url, headers } = req;
+    const authHeader = headers.authorization;
+    const hasAuth = !!authHeader;
+    const authPreview = authHeader ? `${authHeader.substring(0, 20)}...` : 'none';
+
+    logger.log(`--> ${method} ${url} | Auth: ${hasAuth ? authPreview : 'none'}`);
+
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      logger.log(`<-- ${method} ${url} ${res.statusCode} (${duration}ms)`);
+    });
+
+    next();
+  });
 
   // Enable CORS
   app.enableCors({

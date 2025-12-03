@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  privyId   String   @unique @map("privy_id")
+  email     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // User profile
+  displayName String? @map("display_name")
+  avatarUrl   String? @map("avatar_url")
+
+  // Wallet addresses linked to this user
+  wallets UserWallet[]
+
+  @@map("users")
+}
+
+model UserWallet {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  address   String
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, address])
+  @@map("user_wallets")
+}
