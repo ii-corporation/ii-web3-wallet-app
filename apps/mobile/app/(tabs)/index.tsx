@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, RefreshControl, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../src/hooks/useAuth";
+import { useUserStore } from "../../src/stores";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState, useCallback } from "react";
 import { Card } from "../../src/components/ui/Card";
@@ -12,6 +13,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const isWeb = Platform.OS === "web";
 
+  // Get data from global user store
+  const { getDisplayName, getWalletAddress } = useUserStore();
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     // TODO: Refresh data
@@ -19,12 +23,15 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, []);
 
+  // Get wallet address from store (or Privy as fallback)
+  const walletAddress = getWalletAddress() || user?.wallet?.address;
+
   // Get display address (truncated) - mock for web
   const displayAddress = isWeb
     ? "0x1234...abcd"
-    : user?.wallet?.address
-      ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
-      : "Not connected";
+    : walletAddress
+      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+      : "Loading...";
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
@@ -41,12 +48,15 @@ export default function HomeScreen() {
             <View>
               <Text className="text-sm text-slate-500">Welcome back</Text>
               <Text className="text-xl font-bold text-slate-900">
+                {getDisplayName()}
+              </Text>
+              <Text className="text-xs text-slate-400">
                 {displayAddress}
               </Text>
             </View>
             <View className="w-10 h-10 rounded-full bg-primary-100 items-center justify-center">
               <Text className="text-primary-600 font-bold">
-                {isWeb ? "ZP" : (user?.wallet?.address?.slice(2, 4).toUpperCase() || "?")}
+                {isWeb ? "ZP" : (walletAddress?.slice(2, 4).toUpperCase() || "?")}
               </Text>
             </View>
           </View>

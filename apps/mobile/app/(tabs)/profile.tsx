@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../src/hooks/useAuth";
+import { useUserStore, selectIsAuthenticated, selectAccessToken, selectProfile } from "../../src/stores";
 import { Card } from "../../src/components/ui/Card";
 import { Button } from "../../src/components/ui/Button";
 
@@ -49,18 +50,33 @@ export default function ProfileScreen() {
   const [apiStatus, setApiStatus] = useState<string | null>(null);
   const [isTestingApi, setIsTestingApi] = useState(false);
 
-  // Get display address (mock for web)
-  const mockAddress = "0x1234...abcd";
+  // Get data from global user store
+  const isStoreAuthenticated = useUserStore(selectIsAuthenticated);
+  const storedToken = useUserStore(selectAccessToken);
+  const userProfile = useUserStore(selectProfile);
+  const { getDisplayName, getPrimaryEmail, getWalletAddress } = useUserStore();
+
+  // Use combined auth state (Privy + store)
+  const isConnected = authenticated || isStoreAuthenticated;
+
+  // Get display address from store or Privy
+  const walletAddress = getWalletAddress();
   const displayAddress = isWeb
-    ? mockAddress
-    : user?.wallet?.address
-      ? `${user.wallet.address.slice(0, 6)}...${user.wallet.address.slice(-4)}`
+    ? "0x1234...abcd"
+    : walletAddress
+      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
       : "Not connected";
 
-  // Get user email if available
-  const userEmail = user?.email?.address || user?.google?.email || null;
+  // Get user email from store or Privy
+  const userEmail = getPrimaryEmail() || user?.email?.address || user?.google?.email || null;
 
   const handleLogout = () => {
+    // Prevent double-tap
+    if (isLoggingOut) {
+      console.log("[Profile] Logout already in progress");
+      return;
+    }
+
     if (isWeb) {
       // On web, just call logout - AuthGate will handle redirect
       console.log("[Profile] Web logout");
@@ -70,30 +86,32 @@ export default function ProfileScreen() {
 
     Alert.alert(
       "Sign Out",
-      "Are you sure you want to sign out? This will disconnect you from Privy and the API.",
+      "Are you sure you want to sign out?",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Sign Out",
           style: "destructive",
           onPress: async () => {
+            // Double-check we're not already logging out
+            if (isLoggingOut) return;
+
             try {
               setIsLoggingOut(true);
               console.log("[Profile] Starting logout...");
 
-              // Call Privy logout - AuthGate will detect auth change and redirect
               if (logout) {
                 await logout();
-                console.log("[Profile] Privy logout successful, AuthGate will redirect");
+                console.log("[Profile] Privy logout completed");
               } else {
                 console.warn("[Profile] Logout function not available");
               }
             } catch (error: any) {
               console.error("[Profile] Logout error:", error);
               Alert.alert("Error", "Failed to sign out. Please try again.");
-            } finally {
               setIsLoggingOut(false);
             }
+            // Don't reset isLoggingOut - component will unmount after redirect
           },
         },
       ]
@@ -112,8 +130,12 @@ export default function ProfileScreen() {
       setApiStatus("Testing...");
       console.log("[Profile] Testing API connection...");
 
-      // Get access token from Privy
-      const token = await getAccessToken?.();
+      // Try to get token from store first, then from Privy
+      let token = storedToken;
+      if (!token) {
+        token = await getAccessToken?.();
+      }
+
       if (!token) {
         setApiStatus("No token available");
         console.error("[Profile] No access token available");
@@ -135,7 +157,7 @@ export default function ProfileScreen() {
       console.log("[Profile] API response:", data);
 
       if (data.authenticated) {
-        setApiStatus(`Connected! Token: ${data.tokenLength} chars`);
+        setApiStatus(`Connected! Token: ${token.length} chars`);
       } else {
         setApiStatus(`Error: ${data.message}`);
       }
@@ -162,15 +184,18 @@ export default function ProfileScreen() {
           <Card variant="elevated" className="items-center py-6">
             <View className="w-20 h-20 rounded-full bg-primary-100 items-center justify-center mb-3">
               <Text className="text-primary-600 text-2xl font-bold">
-                {isWeb ? "ZP" : (userEmail ? userEmail.charAt(0).toUpperCase() : (user?.wallet?.address?.slice(2, 4).toUpperCase() || "?"))}
+                {isWeb ? "ZP" : (userEmail ? userEmail.charAt(0).toUpperCase() : (walletAddress?.slice(2, 4).toUpperCase() || "?"))}
               </Text>
             </View>
+            <Text className="text-lg font-semibold text-slate-900 mb-1">
+              {getDisplayName()}
+            </Text>
             {userEmail && (
-              <Text className="text-lg font-semibold text-slate-900 mb-1">
+              <Text className="text-sm text-slate-500 mb-1">
                 {userEmail}
               </Text>
             )}
-            <Text className={`${userEmail ? 'text-sm text-slate-500' : 'text-lg font-semibold text-slate-900'} mb-1`}>
+            <Text className="text-sm text-slate-500 mb-1">
               {displayAddress}
             </Text>
             <TouchableOpacity
@@ -190,11 +215,11 @@ export default function ProfileScreen() {
             <View className="flex-row items-center justify-between">
               <View>
                 <Text className="text-sm text-slate-500">Account Status</Text>
-                <Text className="text-base font-semibold text-success">
-                  Active
+                <Text className={`text-base font-semibold ${isConnected ? 'text-success' : 'text-error'}`}>
+                  {isConnected ? (userProfile?.accountStatus === 'active' ? 'Active' : 'Pending Setup') : 'Not Connected'}
                 </Text>
               </View>
-              <View className="w-3 h-3 rounded-full bg-success" />
+              <View className={`w-3 h-3 rounded-full ${isConnected ? 'bg-success' : 'bg-error'}`} />
             </View>
           </Card>
         </View>
@@ -227,6 +252,12 @@ export default function ProfileScreen() {
             <View className="mt-2 pt-2 border-t border-slate-100">
               <Text className="text-xs text-slate-400">
                 Endpoint: {API_URL}/auth/verify
+              </Text>
+              <Text className="text-xs text-slate-400 mt-1">
+                Stored Token: {storedToken ? `${storedToken.length} chars` : 'None'}
+              </Text>
+              <Text className="text-xs text-slate-400 mt-1">
+                Privy Auth: {authenticated ? 'Yes' : 'No'} | Store Auth: {isStoreAuthenticated ? 'Yes' : 'No'}
               </Text>
             </View>
           </Card>

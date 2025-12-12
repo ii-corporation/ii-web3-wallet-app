@@ -38,6 +38,9 @@ export class AuthService {
   /**
    * Authenticate user and sync with database
    * This should be called after successful Privy login on the mobile app
+   *
+   * Note: Wallet creation should be enabled in Privy Dashboard under
+   * "Embedded Wallets" -> "Create wallet on login"
    */
   async syncUser(token: string) {
     // Verify the token first
@@ -60,8 +63,16 @@ export class AuthService {
       privyUser.apple?.email ||
       null;
 
-    // Extract wallet address if available
+    // Extract wallet address (created automatically by Privy if enabled in dashboard)
     const walletAddress = privyUser.wallet?.address || null;
+
+    if (!walletAddress) {
+      this.logger.warn(
+        `User ${claims.userId} has no wallet. Enable "Create wallet on login" in Privy Dashboard.`,
+      );
+    } else {
+      this.logger.log(`User wallet: ${walletAddress.slice(0, 10)}...`);
+    }
 
     // Find or create user in our database
     const { user, isNew } = await this.userService.findOrCreateByPrivyId({
@@ -76,7 +87,8 @@ export class AuthService {
       privyUser: {
         id: privyUser.id,
         email,
-        hasWallet: !!privyUser.wallet,
+        hasWallet: !!walletAddress,
+        walletAddress,
       },
     };
   }

@@ -45,7 +45,10 @@ export default function WelcomeScreen() {
       });
 
       console.log("[WelcomeScreen] Login successful:", result?.user?.id);
-      // AuthGate will handle navigation to (tabs) when auth state updates
+
+      // Give the modal time to close before navigation
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log("[WelcomeScreen] Modal close delay complete, AuthGate will redirect");
     } catch (error: any) {
       console.error("[WelcomeScreen] Login error:", error);
       if (error?.message?.includes("already logged in") || error?.code === "user_already_logged_in") {

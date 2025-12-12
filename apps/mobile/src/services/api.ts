@@ -1,14 +1,17 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:3001/api";
 
+export interface ApiWallet {
+  id: string;
+  address: string;
+  isPrimary: boolean;
+}
+
 export interface ApiUser {
   id: string;
+  privyId?: string;
   email: string | null;
   displayName: string | null;
-  wallets: Array<{
-    id: string;
-    address: string;
-    isPrimary: boolean;
-  }>;
+  wallets: ApiWallet[];
   createdAt: string;
 }
 

@@ -8,15 +8,30 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: zoop
+      POSTGRES_PASSWORD: zoop_dev_password
       POSTGRES_DB: zoop
       POSTGRES_INITDB_ARGS: "-E UTF8"
     volumes:
-      - postgres_data:/var/lib/postgresql/zoop/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U zoop -d zoop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zoop-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: zoop-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,6 +40,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:
