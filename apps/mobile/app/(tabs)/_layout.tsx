@@ -1,122 +1,174 @@
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { Text, StyleSheet } from "react-native";
+import {
+  HomeIcon,
+  StakingIcon,
+  ConvertIcon,
+  RewardsIcon,
+  WalletIcon,
+} from "../../src/components/icons";
+import { TabBarIcon } from "../../src/components/layouts/navigation";
+import { GradientIcon, GradientText } from "../../src/components/ui";
 
-// Tab Bar Icons
-function HomeIcon({ focused }: { focused: boolean }) {
-  return (
-    <View className={`w-6 h-6 items-center justify-center`}>
-      <View
-        className={`w-5 h-5 rounded-md ${focused ? "bg-primary-600" : "bg-slate-400"}`}
-      />
-    </View>
-  );
+// Custom label component for tab bar with extra bold on active
+function TabLabel({
+  focused,
+  children,
+}: {
+  focused: boolean;
+  children: string;
+}) {
+  if (focused) {
+    return (
+      <GradientText style={styles.labelActive}>{children}</GradientText>
+    );
+  }
+  return <Text style={styles.labelInactive}>{children}</Text>;
 }
 
-function WalletIcon({ focused }: { focused: boolean }) {
-  return (
-    <View className="w-6 h-6 items-center justify-center">
-      <View
-        style={{
-          width: 20,
-          height: 14,
-          borderRadius: 4,
-          borderWidth: 2,
-          borderColor: focused ? "#7c3aed" : "#94a3b8",
-        }}
-      />
-    </View>
-  );
-}
-
-function StakingIcon({ focused }: { focused: boolean }) {
-  return (
-    <View className="w-6 h-6 items-center justify-center">
-      <View
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: 9,
-          borderWidth: 2,
-          borderColor: focused ? "#7c3aed" : "#94a3b8",
-        }}
-      />
-    </View>
-  );
-}
-
-function ProfileIcon({ focused }: { focused: boolean }) {
-  return (
-    <View className="w-6 h-6 items-center justify-center">
-      <View
-        style={{
-          width: 12,
-          height: 12,
-          borderRadius: 6,
-          backgroundColor: focused ? "#7c3aed" : "#94a3b8",
-          marginBottom: 2,
-        }}
-      />
-      <View
-        style={{
-          width: 18,
-          height: 8,
-          borderTopLeftRadius: 9,
-          borderTopRightRadius: 9,
-          backgroundColor: focused ? "#7c3aed" : "#94a3b8",
-        }}
-      />
-    </View>
-  );
-}
+const styles = StyleSheet.create({
+  labelActive: {
+    fontSize: 9,
+    fontWeight: "800",
+    marginTop: 8,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  labelInactive: {
+    fontSize: 9,
+    fontWeight: "600",
+    marginTop: 8,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+    color: "#475569",
+  },
+});
 
 export default function TabsLayout() {
-  // Auth is handled by AuthGate in root _layout.tsx
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#ffffff",
-          borderTopColor: "#e2e8f0",
+          backgroundColor: "#F8FAFC",
+          borderTopColor: "#F1F5F9",
           borderTopWidth: 1,
-          height: 84,
-          paddingTop: 8,
-          paddingBottom: 28,
-        },
-        tabBarActiveTintColor: "#7c3aed",
-        tabBarInactiveTintColor: "#94a3b8",
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "500",
+          height: 60,
+          paddingTop: 0,
+          paddingBottom: 4,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 80,
+          elevation: 8,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
-          tabBarIcon: ({ focused }) => <HomeIcon focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="wallet"
-        options={{
-          title: "Wallet",
-          tabBarIcon: ({ focused }) => <WalletIcon focused={focused} />,
+          title: "HOME",
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused}>
+              {focused ? (
+                <GradientIcon size={24}>
+                  <HomeIcon size={24} color="#000" filled />
+                </GradientIcon>
+              ) : (
+                <HomeIcon size={24} />
+              )}
+            </TabBarIcon>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <TabLabel focused={focused}>HOME</TabLabel>
+          ),
         }}
       />
       <Tabs.Screen
         name="staking"
         options={{
-          title: "Staking",
-          tabBarIcon: ({ focused }) => <StakingIcon focused={focused} />,
+          title: "STAKING",
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused}>
+              {focused ? (
+                <GradientIcon size={24}>
+                  <StakingIcon size={24} color="#000" filled />
+                </GradientIcon>
+              ) : (
+                <StakingIcon size={24} />
+              )}
+            </TabBarIcon>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <TabLabel focused={focused}>STAKING</TabLabel>
+          ),
         }}
       />
       <Tabs.Screen
+        name="convert"
+        options={{
+          title: "CONVERT",
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused}>
+              {focused ? (
+                <GradientIcon size={24}>
+                  <ConvertIcon size={24} color="#000" />
+                </GradientIcon>
+              ) : (
+                <ConvertIcon size={24} />
+              )}
+            </TabBarIcon>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <TabLabel focused={focused}>CONVERT</TabLabel>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="rewards"
+        options={{
+          title: "REWARDS",
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused}>
+              {focused ? (
+                <GradientIcon size={24}>
+                  <RewardsIcon size={24} color="#000" filled />
+                </GradientIcon>
+              ) : (
+                <RewardsIcon size={24} />
+              )}
+            </TabBarIcon>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <TabLabel focused={focused}>REWARDS</TabLabel>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          title: "WALLET",
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused}>
+              {focused ? (
+                <GradientIcon size={24}>
+                  <WalletIcon size={24} color="#000" filled />
+                </GradientIcon>
+              ) : (
+                <WalletIcon size={24} />
+              )}
+            </TabBarIcon>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <TabLabel focused={focused}>WALLET</TabLabel>
+          ),
+        }}
+      />
+      {/* Hide profile from tab bar but keep the screen */}
+      <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ focused }) => <ProfileIcon focused={focused} />,
+          href: null,
         }}
       />
     </Tabs>

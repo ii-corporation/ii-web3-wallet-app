@@ -327,21 +327,15 @@ export default function ProfileScreen() {
         {/* Sign Out */}
         <View className="px-5">
           <Button
-            variant="outline"
-            size="lg"
+            type="outlined"
+            size="large"
             onPress={handleLogout}
-            className="border-error"
-            textClassName="text-error"
             disabled={isLoggingOut}
+            loading={isLoggingOut}
+            style={{ borderColor: "#ef4444" }}
+            textStyle={{ color: "#ef4444" }}
           >
-            {isLoggingOut ? (
-              <View className="flex-row items-center">
-                <ActivityIndicator size="small" color="#ef4444" />
-                <Text className="text-error ml-2">Signing out...</Text>
-              </View>
-            ) : (
-              "Sign Out"
-            )}
+            {isLoggingOut ? "Signing out..." : "Sign Out"}
           </Button>
         </View>
 

@@ -5,8 +5,11 @@ import {
   Headers,
   Logger,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -15,15 +18,93 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   /**
-   * Verify token and return basic auth status
-   * Used for debugging/testing the auth flow
+   * Login with Privy token
+   * Exchanges Privy JWT for our backend JWT
+   *
+   * @param authHeader - Bearer token from Privy
+   * @returns User info and backend JWT tokens
+   */
+  @Post('login')
+  async login(@Headers('authorization') authHeader: string) {
+    this.logger.log('Login endpoint called');
+
+    const privyToken = this.extractToken(authHeader);
+    if (!privyToken) {
+      throw new UnauthorizedException('No Privy token provided');
+    }
+
+    const result = await this.authService.login(privyToken);
+
+    return {
+      success: true,
+      user: result.user,
+      tokens: result.tokens,
+      isNewUser: result.isNewUser,
+    };
+  }
+
+  /**
+   * Refresh backend JWT
+   * Requires valid Privy token to ensure session is still active
+   * This prevents users from staying logged in after Privy session expires
+   */
+  @Post('refresh')
+  async refreshToken(@Headers('authorization') authHeader: string) {
+    this.logger.log('Refresh token endpoint called');
+
+    const privyToken = this.extractToken(authHeader);
+    if (!privyToken) {
+      throw new UnauthorizedException('No Privy token provided');
+    }
+
+    // Re-verify Privy session is still valid before refreshing
+    const tokens = await this.authService.refreshWithPrivyVerification(privyToken);
+
+    return {
+      success: true,
+      tokens,
+    };
+  }
+
+  /**
+   * Get current user profile
+   * Protected by backend JWT
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@CurrentUser() user: CurrentUserData) {
+    this.logger.log(`Get current user: ${user.id}`);
+
+    const fullUser = await this.authService.getUserById(user.id);
+
+    if (!fullUser) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return {
+      success: true,
+      user: {
+        id: fullUser.id,
+        email: fullUser.email,
+        displayName: fullUser.displayName,
+        avatarUrl: fullUser.avatarUrl,
+        wallets: fullUser.wallets.map((w) => ({
+          address: w.address,
+          isPrimary: w.isPrimary,
+        })),
+        createdAt: fullUser.createdAt,
+      },
+    };
+  }
+
+  /**
+   * Verify Privy token status (debugging endpoint)
    */
   @Get('verify')
   async verifyAuth(@Headers('authorization') authHeader: string) {
     this.logger.log('Auth verify endpoint called');
 
     if (!authHeader) {
-      this.logger.warn('No authorization header provided');
       return {
         authenticated: false,
         message: 'No authorization header provided',
@@ -39,10 +120,10 @@ export class AuthController {
     }
 
     try {
-      const claims = await this.authService.verifyToken(token);
+      const claims = await this.authService.verifyPrivyToken(token);
       return {
         authenticated: true,
-        message: 'Token verified',
+        message: 'Privy token verified',
         userId: claims.userId,
         appId: claims.appId,
         timestamp: new Date().toISOString(),
@@ -55,86 +136,8 @@ export class AuthController {
     }
   }
 
-  /**
-   * Sync user after Privy login
-   * This endpoint should be called immediately after successful Privy authentication
-   * It will create the user in the database if they don't exist
-   */
-  @Post('sync')
-  async syncUser(@Headers('authorization') authHeader: string) {
-    this.logger.log('User sync endpoint called');
-
-    if (!authHeader) {
-      throw new UnauthorizedException('No authorization header provided');
-    }
-
-    const token = this.extractToken(authHeader);
-    if (!token) {
-      throw new UnauthorizedException('Invalid authorization format');
-    }
-
-    const result = await this.authService.syncUser(token);
-
-    const user = result.user!;
-    this.logger.log(
-      `User synced: ${user.id} (${result.isNew ? 'new' : 'existing'})`,
-    );
-
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        wallets: user.wallets,
-        createdAt: user.createdAt,
-      },
-      isNewUser: result.isNew,
-    };
-  }
-
-  /**
-   * Get current user profile
-   */
-  @Get('me')
-  async getCurrentUser(@Headers('authorization') authHeader: string) {
-    this.logger.log('Get current user endpoint called');
-
-    if (!authHeader) {
-      throw new UnauthorizedException('No authorization header provided');
-    }
-
-    const token = this.extractToken(authHeader);
-    if (!token) {
-      throw new UnauthorizedException('Invalid authorization format');
-    }
-
-    const user = await this.authService.getUserFromToken(token);
-
-    if (!user) {
-      // User authenticated with Privy but not in our database
-      // This can happen if they haven't called /auth/sync yet
-      return {
-        authenticated: true,
-        user: null,
-        message: 'User not found. Please call /auth/sync first.',
-      };
-    }
-
-    return {
-      authenticated: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-        wallets: user.wallets,
-        createdAt: user.createdAt,
-      },
-    };
-  }
-
-  private extractToken(authHeader: string): string | null {
-    if (!authHeader.startsWith('Bearer ')) {
+  private extractToken(authHeader: string | undefined): string | null {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;
     }
     return authHeader.substring(7);

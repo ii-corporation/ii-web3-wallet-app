@@ -17,7 +17,9 @@
     "mobile:android": "bun run --cwd apps/mobile android",
     "backend": "bun run --cwd apps/backend start:dev",
     "db:migrate": "bun run --cwd apps/backend db:migrate",
-    "db:generate": "bun run --cwd apps/backend db:generate"
+    "db:generate": "bun run --cwd apps/backend db:generate",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -27,5 +29,12 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  }
+  },
+  "dependencies": {
+    "expo-dev-client": "~6.0.20",
+    "expo": "~54.0.25",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "version": "1.0.0"
 }

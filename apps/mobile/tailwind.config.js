@@ -1,4 +1,14 @@
 /** @type {import('tailwindcss').Config} */
+
+// Gradient color definitions for Tailwind CSS classes
+// For components, import from src/theme/gradients.ts instead
+const gradients = {
+  primary: {
+    start: "#9C2CF3",
+    end: "#3A6FF9",
+  },
+};
+
 module.exports = {
   darkMode: "class",
   content: [
@@ -27,6 +37,9 @@ module.exports = {
         mint: "#27e7c4",
         // Background
         "bg-dark": "#111322",
+        // Gradient colors (for reference in styles)
+        "gradient-primary-start": gradients.primary.start,
+        "gradient-primary-end": gradients.primary.end,
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
@@ -35,4 +48,3 @@ module.exports = {
   },
   plugins: [],
 };
-

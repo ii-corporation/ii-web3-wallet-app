@@ -3,8 +3,9 @@
  * Re-exports all Zustand stores for easy importing
  */
 
-// Auth flow store (navigation state)
-export { useAuthFlowStore } from "./authStore";
+// Auth store (tokens, flow state)
+export { useAuthStore, useAuthFlowStore } from "./authStore";
+export type { AuthTokens, BackendUser } from "./authStore";
 
 // User store (global user state)
 export {
@@ -56,3 +57,10 @@ export {
   selectTransactionStatus,
 } from "./transactionStore";
 export type { TransactionStatus } from "./transactionStore";
+
+// Language store (i18n preferences)
+export {
+  useLanguageStore,
+  selectLanguage,
+  selectIsManuallySet,
+} from "./languageStore";

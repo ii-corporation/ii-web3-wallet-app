@@ -1,155 +1,200 @@
-import { View, Text, ScrollView, RefreshControl, Platform } from "react-native";
+import { View, Text, ScrollView, RefreshControl, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../src/hooks/useAuth";
-import { useUserStore } from "../../src/stores";
-import { LinearGradient } from "expo-linear-gradient";
 import { useState, useCallback } from "react";
-import { Card } from "../../src/components/ui/Card";
-import { Button } from "../../src/components/ui/Button";
-import { GradientText } from "../../src/components/ui/GradientText";
+import { router } from "expo-router";
+import {
+  AssetCard,
+  EarningsStatCard,
+  StakeRow,
+  StakePieChart,
+  StakerCard,
+  PIE_CHART_COLORS,
+} from "../../src/components/home";
+import { GradientText } from "../../src/components/ui";
+import { NotificationIcon } from "../../src/components/icons";
+
+// Placeholder avatar images
+const AVATARS = {
+  floyd: require("../../assets/avatars/avatar1.png"),
+  arlene: require("../../assets/avatars/avatar2.png"),
+  wade: require("../../assets/avatars/avatar3.png"),
+};
+
+// Mock data - replace with real data from stores/API
+const MOCK_DATA = {
+  zoopPoints: 3320,
+  zoopTokens: 6258,
+  dailyRewards: 38.06,
+  estimatedZPY: "5.75%",
+  availableToStake: 220,
+  totalStaked: 8300,
+  topStakes: [
+    { id: "1", name: "Floyd McCoy", tokens: 3320, rank: 1, avatar: AVATARS.floyd },
+    { id: "2", name: "Arlene Freeman", tokens: 536, rank: 2, avatar: AVATARS.arlene },
+    { id: "3", name: "Wade Robertson", tokens: 130, rank: 3, avatar: AVATARS.wade },
+    { id: "4", name: "Jenny Wilson", tokens: 98, rank: 4 },
+  ],
+  stakeSegments: [
+    { value: 3320, color: PIE_CHART_COLORS[0] }, // Purple
+    { value: 2100, color: PIE_CHART_COLORS[1] }, // Lime
+    { value: 1500, color: PIE_CHART_COLORS[2] }, // Mint
+    { value: 800, color: PIE_CHART_COLORS[3] }, // Orange
+    { value: 400, color: PIE_CHART_COLORS[4] }, // Pink
+    { value: 180, color: PIE_CHART_COLORS[5] }, // Blue
+  ],
+};
+
+// Section header component
+function SectionHeader({
+  title,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <View className="flex-row items-center justify-between mb-3">
+      <Text className="text-sm font-semibold text-slate-900">{title}</Text>
+      {actionLabel && (
+        <Pressable onPress={onAction}>
+          <GradientText
+            className="text-sm font-semibold"
+            style={{ letterSpacing: 0.14 }}
+          >
+            {actionLabel}
+          </GradientText>
+        </Pressable>
+      )}
+    </View>
+  );
+}
 
 export default function HomeScreen() {
-  const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const isWeb = Platform.OS === "web";
-
-  // Get data from global user store
-  const { getDisplayName, getWalletAddress } = useUserStore();
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // TODO: Refresh data
+    // TODO: Refresh data from API
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setRefreshing(false);
   }, []);
 
-  // Get wallet address from store (or Privy as fallback)
-  const walletAddress = getWalletAddress() || user?.wallet?.address;
+  const handleViewWallet = () => {
+    router.push("/(tabs)/wallet");
+  };
 
-  // Get display address (truncated) - mock for web
-  const displayAddress = isWeb
-    ? "0x1234...abcd"
-    : walletAddress
-      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-      : "Loading...";
+  const handleStake = () => {
+    router.push("/(tabs)/staking?tab=explore");
+  };
+
+  const handleViewStakes = () => {
+    router.push("/(tabs)/staking?tab=my-stakes");
+  };
+
+  const handleHelpPress = (topic: string) => {
+    // TODO: Show help modal
+    console.log(`Help pressed for: ${topic}`);
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-slate-100" edges={["top"]}>
+      {/* Top App Bar */}
+      <View className="flex-row items-center justify-between px-4 py-3">
+        <Text className="text-2xl font-semibold text-slate-900">Home</Text>
+        <Pressable hitSlop={8}>
+          <NotificationIcon color="#0F172A" />
+        </Pressable>
+      </View>
+
       <ScrollView
         className="flex-1"
         contentContainerClassName="pb-6"
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <View className="px-5 pt-4 pb-6">
-          <View className="flex-row items-center justify-between mb-6">
-            <View>
-              <Text className="text-sm text-slate-500">Welcome back</Text>
-              <Text className="text-xl font-bold text-slate-900">
-                {getDisplayName()}
-              </Text>
-              <Text className="text-xs text-slate-400">
-                {displayAddress}
-              </Text>
-            </View>
-            <View className="w-10 h-10 rounded-full bg-primary-100 items-center justify-center">
-              <Text className="text-primary-600 font-bold">
-                {isWeb ? "ZP" : (walletAddress?.slice(2, 4).toUpperCase() || "?")}
-              </Text>
-            </View>
+        {/* Your Assets Section */}
+        <View className="px-4 mb-6">
+          <SectionHeader
+            title="Your assets"
+            actionLabel="View wallet"
+            onAction={handleViewWallet}
+          />
+          <View className="flex-row gap-2">
+            <AssetCard type="points" value={MOCK_DATA.zoopPoints} />
+            <AssetCard type="tokens" value={MOCK_DATA.zoopTokens} />
+          </View>
+        </View>
+
+        {/* Earnings Section */}
+        <View className="px-4 mb-6">
+          <SectionHeader
+            title="Earnings"
+            actionLabel="Stake"
+            onAction={handleStake}
+          />
+
+          {/* Stats Row */}
+          <View className="flex-row gap-2 mb-3">
+            <EarningsStatCard
+              label="Daily rewards"
+              value={MOCK_DATA.dailyRewards}
+              onHelpPress={() => handleHelpPress("daily-rewards")}
+            />
+            <EarningsStatCard
+              label="Estimated ZPY"
+              value={MOCK_DATA.estimatedZPY}
+              onHelpPress={() => handleHelpPress("zpy")}
+            />
           </View>
 
-          {/* Total Balance Card */}
-          <View className="rounded-2xl overflow-hidden">
-            <LinearGradient
-              colors={["#9c2cf3", "#3a6ff9"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="p-5"
+          {/* Available to Stake Row */}
+          <StakeRow
+            title="Available to stake"
+            subtitle="Tokens ready to stake"
+            value={MOCK_DATA.availableToStake}
+            onPress={handleStake}
+          />
+        </View>
+
+        {/* Your Top Stakes Section */}
+        <View className="px-4">
+          <SectionHeader
+            title="Your top stakes"
+            actionLabel="View stakes"
+            onAction={handleViewStakes}
+          />
+
+          {/* Pie Chart */}
+          <View className="items-center mb-6">
+            <StakePieChart
+              segments={MOCK_DATA.stakeSegments}
+              totalStaked={MOCK_DATA.totalStaked}
+              size={180}
+            />
+          </View>
+
+          {/* Stakers Horizontal List */}
+          <View style={{ marginHorizontal: -16 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-3 px-4 pb-4"
             >
-              <Text className="text-white/80 text-sm mb-1">Total Balance</Text>
-              <Text className="text-white text-4xl font-bold mb-4">
-                $0.00
-              </Text>
-              <View className="flex-row items-center">
-                <View className="bg-white/20 px-2 py-1 rounded-full">
-                  <Text className="text-white text-xs font-medium">
-                    0 ZOOP
-                  </Text>
-                </View>
-                <Text className="text-white/60 text-xs ml-2">+0% today</Text>
-              </View>
-            </LinearGradient>
+              {MOCK_DATA.topStakes.map((staker) => (
+                <StakerCard
+                  key={staker.id}
+                  name={staker.name}
+                  tokens={staker.tokens}
+                  rank={staker.rank}
+                  avatar={staker.avatar}
+                />
+              ))}
+            </ScrollView>
           </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View className="px-5 mb-6">
-          <Text className="text-lg font-semibold text-slate-900 mb-3">
-            Quick Actions
-          </Text>
-          <View className="flex-row gap-3">
-            <Card variant="elevated" className="flex-1 items-center py-4">
-              <View className="w-12 h-12 rounded-full bg-primary-100 items-center justify-center mb-2">
-                <Text className="text-2xl">↗</Text>
-              </View>
-              <Text className="text-sm font-medium text-slate-900">Send</Text>
-            </Card>
-            <Card variant="elevated" className="flex-1 items-center py-4">
-              <View className="w-12 h-12 rounded-full bg-mint/20 items-center justify-center mb-2">
-                <Text className="text-2xl">↙</Text>
-              </View>
-              <Text className="text-sm font-medium text-slate-900">Receive</Text>
-            </Card>
-            <Card variant="elevated" className="flex-1 items-center py-4">
-              <View className="w-12 h-12 rounded-full bg-lime/30 items-center justify-center mb-2">
-                <Text className="text-2xl">📈</Text>
-              </View>
-              <Text className="text-sm font-medium text-slate-900">Stake</Text>
-            </Card>
-          </View>
-        </View>
-
-        {/* Staking Rewards */}
-        <View className="px-5 mb-6">
-          <Text className="text-lg font-semibold text-slate-900 mb-3">
-            Staking Rewards
-          </Text>
-          <Card variant="elevated" className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-sm text-slate-500 mb-1">
-                Available Rewards
-              </Text>
-              <GradientText className="text-2xl">0 ZOOP</GradientText>
-            </View>
-            <Button variant="gradient" size="sm">
-              Claim
-            </Button>
-          </Card>
-        </View>
-
-        {/* Your Stakes */}
-        <View className="px-5">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-semibold text-slate-900">
-              Your Stakes
-            </Text>
-            <Text className="text-sm text-primary-600">View All</Text>
-          </View>
-          <Card variant="outlined" className="items-center py-8">
-            <Text className="text-4xl mb-2">🎯</Text>
-            <Text className="text-base font-medium text-slate-900 mb-1">
-              No active stakes
-            </Text>
-            <Text className="text-sm text-slate-500 text-center mb-4">
-              Start staking ZOOP to earn rewards
-            </Text>
-            <Button variant="primary" size="sm">
-              Start Staking
-            </Button>
-          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>
