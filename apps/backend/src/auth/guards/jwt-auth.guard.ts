@@ -7,14 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { FastifyRequest } from 'fastify';
-
-export interface JwtPayload {
-  sub: string; // User ID (internal)
-  privyId: string; // Privy user ID
-  email?: string;
-  iat?: number;
-  exp?: number;
-}
+import { JwtPayload } from '../interfaces';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {

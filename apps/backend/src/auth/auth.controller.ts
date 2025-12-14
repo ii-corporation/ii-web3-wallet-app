@@ -9,7 +9,8 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { CurrentUserData } from './interfaces';
 
 @Controller('auth')
 export class AuthController {

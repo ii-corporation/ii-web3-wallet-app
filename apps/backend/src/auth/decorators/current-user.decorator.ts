@@ -1,10 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { CurrentUserData } from '../interfaces';
 
-export interface CurrentUserData {
-  id: string;
-  privyId: string;
-  email?: string;
-}
+export { CurrentUserData };
 
 /**
  * Decorator to extract the current user from the request

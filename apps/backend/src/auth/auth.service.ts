@@ -2,23 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrivyClient } from '@privy-io/server-auth';
 import { UserService } from '../user/user.service';
-import { JwtPayload } from './guards/jwt-auth.guard';
-
-export interface AuthTokens {
-  accessToken: string;
-  expiresIn: number;
-}
-
-export interface LoginResult {
-  user: {
-    id: string;
-    email: string | null;
-    displayName: string | null;
-    wallets: Array<{ address: string; isPrimary: boolean }>;
-  };
-  tokens: AuthTokens;
-  isNewUser: boolean;
-}
+import { AuthTokens, JwtPayload, LoginResult } from './interfaces';
 
 @Injectable()
 export class AuthService {

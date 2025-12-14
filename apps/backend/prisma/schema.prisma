@@ -27,15 +27,38 @@ model User {
   @@map("users")
 }
 
+// Wallet types
+enum WalletType {
+  EOA   // Externally Owned Account (Privy embedded wallet)
+  SAFE  // Safe Smart Account
+}
+
+// Safe wallet creation status
+enum SafeCreationStatus {
+  PENDING     // Queued for creation
+  PROCESSING  // Currently being deployed
+  COMPLETED   // Successfully deployed
+  FAILED      // Deployment failed
+}
+
 model UserWallet {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  address   String
-  isPrimary Boolean  @default(false) @map("is_primary")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String      @id @default(uuid())
+  userId      String      @map("user_id")
+  address     String
+  walletType  WalletType  @default(EOA) @map("wallet_type")
+  isPrimary   Boolean     @default(false) @map("is_primary")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  // Safe-specific fields
+  safeAddress         String?             @map("safe_address")
+  safeCreationStatus  SafeCreationStatus? @map("safe_creation_status")
+  safeCreationTxHash  String?             @map("safe_creation_tx_hash")
+  safeCreatedAt       DateTime?           @map("safe_created_at")
+  safeCreationError   String?             @map("safe_creation_error")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, address])
+  @@index([safeCreationStatus])
   @@map("user_wallets")
 }
